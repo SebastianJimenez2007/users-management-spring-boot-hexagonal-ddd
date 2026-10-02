@@ -48,5 +48,34 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # ------------------------------------------------------------
+  # PostgreSQL: motor alternativo, se activa con DB_DIALECT=postgresql
+  # ------------------------------------------------------------
+  # Levantar solo esta base:  docker compose up -d postgres
+  # ------------------------------------------------------------------
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: crud_usuarios
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: local_pg_password
+    ports:
+      # Puerto en el host. Cambialo si ya tienes un PostgreSQL local en el 5432:
+      # POSTGRES_PORT_LOCAL=5433 docker compose up -d postgres
+      - "${POSTGRES_PORT_LOCAL:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./src/main/resources/schema-postgres.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready --username=postgres --dbname=crud_usuarios
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    restart: unless-stopped
+
 volumes:
   mysql-data:
+  postgres-data:
