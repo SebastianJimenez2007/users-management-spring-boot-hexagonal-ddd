@@ -7,16 +7,20 @@ services:
     autoDeployTrigger: commit
     healthCheckPath: /v3/api-docs
     envVars:
+      - key: DB_DIALECT
+        value: mysql
       - key: DB_HOST
         sync: false
       - key: DB_PORT
-        value: "3306"
+        sync: false
       - key: DB_NAME
         value: crud_usuarios
       - key: DB_USERNAME
         sync: false
       - key: DB_PASSWORD
         sync: false
+      - key: DB_SSL_MODE
+        value: REQUIRED
       - key: SMTP_HOST
         value: smtp.gmail.com
       - key: SMTP_PORT

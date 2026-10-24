@@ -12,7 +12,18 @@ public record DatabaseConfig(
     int port,
     String databaseName,
     String username,
-    String password) {
+    String password,
+    String sslMode) {
+
+  public DatabaseConfig(
+      String dialect,
+      String host,
+      int port,
+      String databaseName,
+      String username,
+      String password) {
+    this(dialect, host, port, databaseName, username, password, null);
+  }
 
   public static final String DIALECT_MYSQL = "mysql";
   public static final String DIALECT_POSTGRESQL = "postgresql";
@@ -32,8 +43,14 @@ public record DatabaseConfig(
       "jdbc:postgresql://%s:%d/%s?stringtype=unspecified";
 
   public String buildJdbcUrl() {
-    final String template = isPostgreSql() ? POSTGRESQL_URL_TEMPLATE : MYSQL_URL_TEMPLATE;
-    return String.format(template, host, port, databaseName);
+    if (isPostgreSql()) {
+      return String.format(POSTGRESQL_URL_TEMPLATE, host, port, databaseName);
+    }
+    String url = String.format(MYSQL_URL_TEMPLATE, host, port, databaseName);
+    if (sslMode != null && !sslMode.isBlank()) {
+      url = url.replace("useSSL=false", "sslMode=" + sslMode);
+    }
+    return url;
   }
 
   public boolean isPostgreSql() {
