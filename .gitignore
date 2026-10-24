@@ -41,3 +41,14 @@ build/
 *.log
 
 /spec/
+
+### Secretos locales ###
+# Cargado automaticamente por Docker Compose; nunca debe versionarse.
+.env
+.env.local
+
+# Configuraciones de ejecucion de IntelliJ: contienen variables SMTP con contrasenas.
+.run/
+
+# Respaldos que genera IntelliJ al guardar (*~)
+*~

@@ -1,0 +1,237 @@
+{
+	"info": {
+		"_postman_id": "b8e1f5a2-8b43-4b62-9e32-a9b0c1d2e3f4",
+		"name": "Taller Microservicios Spring Boot Hexagonal",
+		"description": "Colección completa de endpoints para el taller de Gestión de Usuarios con Spring Boot, Arquitectura Hexagonal y DDD.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userId",
+			"value": "11111111-1111-1111-1111-111111111111",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "1. Autenticación",
+			"item": [
+				{
+					"name": "POST /api/auth/login (Iniciar Sesión y Obtener JWT)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.accessToken) {",
+									"    pm.collectionVariables.set('token', jsonData.accessToken);",
+									"    console.log('Token JWT guardado automáticamente en la colección');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"sebastianjimenezjjb@gmail.com\",\n    \"password\": \"Password123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Autentica al usuario activo y devuelve el token JWT (accessToken)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2. Gestión de Usuarios (/api/users)",
+			"item": [
+				{
+					"name": "POST /api/users (Crear Usuario / Registro Público)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": \"33333333-3333-3333-3333-333333333333\",\n    \"name\": \"Carlos Pérez\",\n    \"email\": \"carlos.perez@example.com\",\n    \"password\": \"Password123!\",\n    \"role\": \"MEMBER\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users"
+							]
+						},
+						"description": "Crea un nuevo usuario con estado inicial PENDING y envía un correo electrónico de confirmación."
+					},
+					"response": []
+				},
+				{
+					"name": "GET /api/users (Listar Todos los Usuarios)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users"
+							]
+						},
+						"description": "Obtiene la lista completa de usuarios. Requiere rol ADMIN o REVIEWER."
+					},
+					"response": []
+				},
+				{
+					"name": "GET /api/users/:id (Obtener Usuario por ID)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/{{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"{{userId}}"
+							]
+						},
+						"description": "Obtiene los detalles de un usuario específico dado su UUID."
+					},
+					"response": []
+				},
+				{
+					"name": "PUT /api/users/:id (Actualizar Usuario)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Sebastian Jimenez Actualizado\",\n    \"email\": \"sebastianjimenezjjb@gmail.com\",\n    \"password\": \"Password123!\",\n    \"role\": \"ADMIN\",\n    \"status\": \"ACTIVE\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/{{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"{{userId}}"
+							]
+						},
+						"description": "Actualiza la información, rol o estado (ACTIVE, INACTIVE, BLOCKED) de un usuario. Requiere rol ADMIN."
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE /api/users/:id (Eliminar Usuario)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/33333333-3333-3333-3333-333333333333",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"33333333-3333-3333-3333-333333333333"
+							]
+						},
+						"description": "Elimina un usuario por su ID. Requiere rol ADMIN."
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
