@@ -9,6 +9,7 @@ import com.jcaa.usersmanagement.application.port.out.SaveUserPort;
 import com.jcaa.usersmanagement.application.service.dto.command.CreateUserCommand;
 import com.jcaa.usersmanagement.domain.enums.UserRole;
 import com.jcaa.usersmanagement.domain.enums.UserStatus;
+import com.jcaa.usersmanagement.domain.exception.EmailSenderException;
 import com.jcaa.usersmanagement.domain.exception.UserAlreadyExistsException;
 import com.jcaa.usersmanagement.domain.model.UserModel;
 import com.jcaa.usersmanagement.domain.valueobject.UserEmail;
@@ -85,6 +86,38 @@ class CreateUserServiceTest {
 
     verify(saveUserPort).save(any(UserModel.class));
     verify(emailNotificationService).notifyUserCreated(savedUser, "Pass1234");
+  }
+
+  // ── fallo del servidor SMTP
+
+  @Test
+  @DisplayName("execute() devuelve el usuario guardado aunque falle el envío del correo")
+  void shouldReturnSavedUserWhenEmailNotificationFails() {
+    // Arrange
+    final CreateUserCommand command =
+        new CreateUserCommand("u-02", "Ana Perez", "ana@example.com", "Pass1234", "MEMBER");
+
+    final UserModel savedUser =
+        new UserModel(
+            new UserId("u-02"),
+            new UserName("Ana Perez"),
+            new UserEmail("ana@example.com"),
+            UserPassword.fromPlainText("Pass1234"),
+            UserRole.MEMBER,
+            UserStatus.PENDING);
+
+    when(getUserByEmailPort.getByEmail(any())).thenReturn(Optional.empty());
+    when(saveUserPort.save(any())).thenReturn(savedUser);
+    doThrow(EmailSenderException.becauseSmtpFailed("ana@example.com", "Connection timed out"))
+        .when(emailNotificationService)
+        .notifyUserCreated(savedUser, "Pass1234");
+
+    // Act
+    final UserModel result = service.execute(command);
+
+    // Assert
+    assertEquals("u-02", result.getId().value(), "el usuario ya persistido debe devolverse");
+    verify(saveUserPort).save(any(UserModel.class));
   }
 
   // ── email duplicado

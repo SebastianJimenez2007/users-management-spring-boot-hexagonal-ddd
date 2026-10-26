@@ -25,6 +25,10 @@ public class JavaMailEmailSenderAdapter implements EmailSenderPort {
   private static final String MAIL_SMTP_PORT = "mail.smtp.port";
   private static final String MAIL_SMTP_AUTH = "mail.smtp.auth";
   private static final String MAIL_SMTP_STARTTLS = "mail.smtp.starttls.enable";
+  private static final String MAIL_SMTP_CONNECTION_TIMEOUT = "mail.smtp.connectiontimeout";
+  private static final String MAIL_SMTP_READ_TIMEOUT = "mail.smtp.timeout";
+  private static final String MAIL_SMTP_WRITE_TIMEOUT = "mail.smtp.writetimeout";
+  private static final String SMTP_TIMEOUT_MILLIS = "4000";
   private static final String CONTENT_TYPE_HTML = "text/html; charset=UTF-8";
   private static final String CHARSET_UTF8 = "UTF-8";
   private static final String LOG_SENT = "[JavaMailEmailSenderAdapter] correo enviado exitosamente.";
@@ -82,6 +86,11 @@ public class JavaMailEmailSenderAdapter implements EmailSenderPort {
     properties.put(MAIL_SMTP_PORT, String.valueOf(config.port()));
     properties.put(MAIL_SMTP_AUTH, "true");
     properties.put(MAIL_SMTP_STARTTLS, "true");
+    // Sin timeouts, JavaMail espera indefinidamente cuando el puerto SMTP esta bloqueado
+    // (por ejemplo en el plan gratuito de Render) y la peticion HTTP nunca responde.
+    properties.put(MAIL_SMTP_CONNECTION_TIMEOUT, SMTP_TIMEOUT_MILLIS);
+    properties.put(MAIL_SMTP_READ_TIMEOUT, SMTP_TIMEOUT_MILLIS);
+    properties.put(MAIL_SMTP_WRITE_TIMEOUT, SMTP_TIMEOUT_MILLIS);
     return properties;
   }
 }

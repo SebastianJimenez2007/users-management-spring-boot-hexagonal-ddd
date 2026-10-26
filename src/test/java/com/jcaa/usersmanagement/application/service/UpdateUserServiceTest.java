@@ -10,6 +10,7 @@ import com.jcaa.usersmanagement.application.port.out.UpdateUserPort;
 import com.jcaa.usersmanagement.application.service.dto.command.UpdateUserCommand;
 import com.jcaa.usersmanagement.domain.enums.UserRole;
 import com.jcaa.usersmanagement.domain.enums.UserStatus;
+import com.jcaa.usersmanagement.domain.exception.EmailSenderException;
 import com.jcaa.usersmanagement.domain.exception.UserAlreadyExistsException;
 import com.jcaa.usersmanagement.domain.exception.UserNotFoundException;
 import com.jcaa.usersmanagement.domain.model.UserModel;
@@ -93,6 +94,30 @@ class UpdateUserServiceTest {
     assertNotNull(result);
     verify(updateUserPort).update(any(UserModel.class));
     verify(emailNotificationService).notifyUserUpdated(existingUser);
+  }
+
+  // ── fallo del servidor SMTP
+
+  @Test
+  @DisplayName("execute() devuelve el usuario actualizado aunque falle el envío del correo")
+  void shouldReturnUpdatedUserWhenEmailNotificationFails() {
+    // Arrange
+    final UpdateUserCommand command =
+        new UpdateUserCommand(ID, "John Updated", EMAIL, null, "ADMIN", "ACTIVE");
+
+    when(getUserByIdPort.getById(any())).thenReturn(Optional.of(existingUser));
+    when(getUserByEmailPort.getByEmail(any())).thenReturn(Optional.of(existingUser));
+    when(updateUserPort.update(any())).thenReturn(existingUser);
+    doThrow(EmailSenderException.becauseSmtpFailed(EMAIL, "Connection timed out"))
+        .when(emailNotificationService)
+        .notifyUserUpdated(existingUser);
+
+    // Act
+    final UserModel result = service.execute(command);
+
+    // Assert
+    assertEquals(existingUser, result, "el usuario ya actualizado debe devolverse");
+    verify(updateUserPort).update(any(UserModel.class));
   }
 
   // ── usuario no encontrado

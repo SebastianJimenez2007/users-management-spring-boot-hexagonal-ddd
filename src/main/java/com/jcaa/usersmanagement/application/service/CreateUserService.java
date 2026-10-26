@@ -5,6 +5,7 @@ import com.jcaa.usersmanagement.application.port.out.GetUserByEmailPort;
 import com.jcaa.usersmanagement.application.port.out.SaveUserPort;
 import com.jcaa.usersmanagement.application.service.dto.command.CreateUserCommand;
 import com.jcaa.usersmanagement.application.service.mapper.UserApplicationMapper;
+import com.jcaa.usersmanagement.domain.exception.EmailSenderException;
 import com.jcaa.usersmanagement.domain.exception.UserAlreadyExistsException;
 import com.jcaa.usersmanagement.domain.model.UserModel;
 import com.jcaa.usersmanagement.domain.valueobject.UserEmail;
@@ -37,9 +38,23 @@ public class CreateUserService implements CreateUserUseCase {
     final UserModel userToSave = UserApplicationMapper.fromCreateCommandToModel(command);
     final UserModel savedUser = saveUserPort.save(userToSave);
 
-    emailNotificationService.notifyUserCreated(savedUser, command.password());
+    notifyCreatedBestEffort(savedUser, command.password());
 
     return savedUser;
+  }
+
+  /**
+   * El usuario ya quedo persistido: un fallo del servidor SMTP no debe invalidar la creacion ni
+   * devolver un error al cliente, solo se deja constancia en el log.
+   */
+  private void notifyCreatedBestEffort(final UserModel savedUser, final String plainPassword) {
+    try {
+      emailNotificationService.notifyUserCreated(savedUser, plainPassword);
+    } catch (final EmailSenderException emailException) {
+      log.warn(
+          "[CreateUserService] usuario creado pero la notificacion por correo fallo: {}",
+          emailException.getMessage());
+    }
   }
 
   private void validateCommand(final CreateUserCommand command) {

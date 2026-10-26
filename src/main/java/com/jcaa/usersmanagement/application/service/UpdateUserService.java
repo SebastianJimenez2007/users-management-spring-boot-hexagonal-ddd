@@ -6,6 +6,7 @@ import com.jcaa.usersmanagement.application.port.out.GetUserByIdPort;
 import com.jcaa.usersmanagement.application.port.out.UpdateUserPort;
 import com.jcaa.usersmanagement.application.service.dto.command.UpdateUserCommand;
 import com.jcaa.usersmanagement.application.service.mapper.UserApplicationMapper;
+import com.jcaa.usersmanagement.domain.exception.EmailSenderException;
 import com.jcaa.usersmanagement.domain.exception.UserAlreadyExistsException;
 import com.jcaa.usersmanagement.domain.exception.UserNotFoundException;
 import com.jcaa.usersmanagement.domain.model.UserModel;
@@ -15,10 +16,12 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Set;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UpdateUserService implements UpdateUserUseCase {
@@ -43,9 +46,23 @@ public class UpdateUserService implements UpdateUserUseCase {
         UserApplicationMapper.fromUpdateCommandToModel(command, current.getPassword());
     final UserModel updatedUser = updateUserPort.update(userToUpdate);
 
-    emailNotificationService.notifyUserUpdated(updatedUser);
+    notifyUpdatedBestEffort(updatedUser);
 
     return updatedUser;
+  }
+
+  /**
+   * El usuario ya quedo actualizado: un fallo del servidor SMTP no debe invalidar la operacion ni
+   * devolver un error al cliente, solo se deja constancia en el log.
+   */
+  private void notifyUpdatedBestEffort(final UserModel updatedUser) {
+    try {
+      emailNotificationService.notifyUserUpdated(updatedUser);
+    } catch (final EmailSenderException emailException) {
+      log.warn(
+          "[UpdateUserService] usuario actualizado pero la notificacion por correo fallo: {}",
+          emailException.getMessage());
+    }
   }
 
   private void validateCommand(final UpdateUserCommand command) {
